@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { AnalysisResult, FlaggedSection, GrammarIssue } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { AnalysisResult, FlaggedSection } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface Props {
@@ -15,12 +15,27 @@ interface Props {
 const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onRefine, fileName, rawText, fileBlob }) => {
   const [activeTab, setActiveTab] = useState<'annotated' | 'preview' | 'grammar'>('annotated');
   
-  const originalityScore = Math.max(0, 100 - result.similarityScore);
-  const COLORS = ['#10b981', '#f1f5f9']; // Green for original, Light slate for matches
+  // Revised Logic: Originality (Human Integrity) decreases with BOTH plagiarism and AI Likelihood
+  // We use the higher of the two risks to define the "Non-Original" portion
+  const nonOriginalScore = Math.max(result.similarityScore, result.aiLikelihood);
+  const humanScore = Math.max(0, 100 - nonOriginalScore);
+  
+  const COLORS = ['#10b981', '#f1f5f9']; 
   const chartData = [
-    { name: 'Originality', value: originalityScore },
-    { name: 'Matches', value: result.similarityScore },
+    { name: 'Human Integrity', value: humanScore },
+    { name: 'Detection Risk', value: nonOriginalScore },
   ];
+
+  const pdfUrl = useMemo(() => {
+    if (!fileBlob) return null;
+    return URL.createObjectURL(fileBlob);
+  }, [fileBlob]);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
 
   const highlightText = (text: string, flagged: FlaggedSection[]) => {
     if (!flagged || flagged.length === 0) return text;
@@ -51,7 +66,6 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onRefine, fileNam
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-24">
-      {/* Risk Alert Banner for High AI Probability */}
       {result.aiLikelihood >= 85 && (
         <div className="bg-red-600 text-white px-6 py-4 rounded-3xl flex items-center justify-between shadow-2xl animate-pulse">
           <div className="flex items-center gap-4">
@@ -112,7 +126,7 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onRefine, fileNam
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative">
             <h3 className="font-black text-slate-900 mb-8 uppercase tracking-widest text-xs flex items-center gap-2">
-              <i className="fas fa-chart-pie text-indigo-600"></i> Originality Score
+              <i className="fas fa-chart-pie text-indigo-600"></i> Human Integrity Score
             </h3>
             <div className="h-64 relative">
               <ResponsiveContainer width="100%" height="100%">
@@ -128,25 +142,34 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onRefine, fileNam
                     startAngle={90}
                     endAngle={-270}
                   >
-                    {chartData.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" />)}
+                    {chartData.map((e, i) => (
+                      <Cell 
+                        key={i} 
+                        fill={i === 0 ? (humanScore > 70 ? '#10b981' : humanScore > 30 ? '#f59e0b' : '#ef4444') : COLORS[1]} 
+                        stroke="none" 
+                      />
+                    ))}
                   </Pie>
                   <Tooltip cursor={false} content={() => null} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-5xl font-black text-slate-900">{originalityScore}%</span>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Unique</span>
+                <span className="text-5xl font-black text-slate-900">{humanScore}%</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Authentic</span>
               </div>
             </div>
-            <div className="mt-4 flex justify-center gap-6">
-               <div className="flex items-center gap-2">
-                 <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                 <span className="text-[10px] font-black text-slate-500 uppercase">Original Content</span>
-               </div>
-               <div className="flex items-center gap-2">
-                 <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                 <span className="text-[10px] font-black text-slate-500 uppercase">Matched Data</span>
-               </div>
+            <div className="mt-4 flex flex-col gap-2">
+              <div className="flex justify-center gap-4">
+                 <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                   <span className="text-[10px] font-black text-slate-500 uppercase">Original</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                   <span className="text-[10px] font-black text-slate-500 uppercase">Detection Risk</span>
+                 </div>
+              </div>
+              <p className="text-[9px] text-center text-slate-400 italic mt-2">Score weighted by combined AI probability and plagiarism matches.</p>
             </div>
           </div>
 
@@ -158,7 +181,7 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onRefine, fileNam
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-indigo-400 uppercase mb-0.5">{s.sourceType}</span>
-                      <a href={s.url} target="_blank" className="text-sm font-bold text-slate-100 hover:text-indigo-300 truncate max-w-[180px]">{s.title}</a>
+                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-slate-100 hover:text-indigo-300 truncate max-w-[180px]">{s.title}</a>
                     </div>
                     <span className="text-xs font-black text-red-400">{s.matchPercentage}%</span>
                   </div>
@@ -191,14 +214,12 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onRefine, fileNam
                 >
                   Grammar ({result.grammarIssues.length})
                 </button>
-                {fileBlob && (
-                  <button 
-                    onClick={() => setActiveTab('preview')}
-                    className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'preview' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    PDF Viewer
-                  </button>
-                )}
+                <button 
+                  onClick={() => setActiveTab('preview')}
+                  className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'preview' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  PDF Viewer
+                </button>
               </div>
             </div>
             
@@ -236,12 +257,32 @@ const AnalysisDashboard: React.FC<Props> = ({ result, onReset, onRefine, fileNam
                 </div>
               )}
 
-              {activeTab === 'preview' && fileBlob && (
-                <iframe 
-                  src={URL.createObjectURL(fileBlob)} 
-                  className="w-full h-full rounded-2xl border border-slate-100 shadow-inner min-h-[600px]"
-                  title="PDF Original Preview"
-                />
+              {activeTab === 'preview' && (
+                <div className="h-full w-full">
+                  {pdfUrl ? (
+                    <iframe 
+                      src={pdfUrl} 
+                      className="w-full h-full rounded-2xl border border-slate-100 shadow-inner min-h-[600px]"
+                      title="PDF Original Preview"
+                    />
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-20 space-y-6 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                      <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center text-slate-300">
+                        <i className="fas fa-file-pdf text-4xl"></i>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-slate-900 mb-2">Original PDF Unavailable</h4>
+                        <p className="text-sm text-slate-500 max-w-xs mx-auto">To save storage, original PDF files are not stored in History. Use the "Dashboard" tab to view annotated text instead.</p>
+                      </div>
+                      <button 
+                        onClick={() => setActiveTab('annotated')}
+                        className="px-6 py-2 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all text-sm"
+                      >
+                        Return to Annotated Text
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

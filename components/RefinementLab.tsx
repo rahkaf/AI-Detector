@@ -13,6 +13,12 @@ const RefinementLab: React.FC<Props> = ({ initialText, onBack }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [history, setHistory] = useState<string[]>([initialText]);
 
+  const countWords = (t: string) => t.trim().split(/\s+/).filter(w => w.length > 0).length;
+
+  const originalWords = countWords(initialText);
+  const currentWords = countWords(text);
+  const wordDiff = currentWords - originalWords;
+
   const handleHumanize = async () => {
     if (isProcessing) return;
     setIsProcessing(true);
@@ -58,6 +64,21 @@ const RefinementLab: React.FC<Props> = ({ initialText, onBack }) => {
           <p className="text-slate-500 font-medium">Adversarial Rewrite for 100% Detection Bypass.</p>
         </div>
         <div className="flex gap-3">
+          <div className="flex items-center gap-4 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm mr-2">
+             <div className="text-center border-r border-slate-100 pr-4">
+               <div className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Original</div>
+               <div className="text-sm font-bold text-slate-700">{originalWords}</div>
+             </div>
+             <div className="text-center">
+               <div className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Refined</div>
+               <div className="text-sm font-bold text-indigo-600">{currentWords}</div>
+             </div>
+             {wordDiff !== 0 && (
+               <div className={`text-[10px] font-black px-1.5 py-0.5 rounded ${wordDiff > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                 {wordDiff > 0 ? '+' : ''}{wordDiff}
+               </div>
+             )}
+          </div>
           <button 
             onClick={undo}
             disabled={history.length <= 1 || isProcessing}

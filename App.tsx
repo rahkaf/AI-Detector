@@ -84,6 +84,16 @@ const App: React.FC = () => {
     setFileBlob(undefined);
   };
 
+  const loadingSteps = [
+    { 
+      label: fileBlob ? 'Normalizing PDF Formatting' : 'Sanitizing Text Input', 
+      icon: fileBlob ? 'fa-file-pdf' : 'fa-font' 
+    },
+    { label: 'Scanning External Repositories', icon: 'fa-globe' },
+    { label: 'Auditing Grammar & Syntax', icon: 'fa-spell-check' },
+    { label: 'Verifying Knowledge Context', icon: 'fa-brain' }
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header currentState={state} onNavigate={setState} />
@@ -107,12 +117,7 @@ const App: React.FC = () => {
               </p>
             </div>
             <div className="flex flex-col gap-4 w-72 mx-auto text-left">
-              {[
-                { label: 'Normalizing PDF Formatting', icon: 'fa-file-pdf' },
-                { label: 'Scanning External Repositories', icon: 'fa-globe' },
-                { label: 'Auditing Grammar & Syntax', icon: 'fa-spell-check' },
-                { label: 'Verifying Knowledge Context', icon: 'fa-brain' }
-              ].map((step, i) => (
+              {loadingSteps.map((step, i) => (
                 <div key={i} className="flex items-center gap-3 text-slate-400 text-sm font-bold uppercase tracking-widest">
                   <i className={`fas ${step.icon} w-6 text-center text-indigo-200`}></i>
                   <span>{step.label}</span>

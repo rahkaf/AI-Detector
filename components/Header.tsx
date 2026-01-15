@@ -9,12 +9,18 @@ interface Props {
 
 const Header: React.FC<Props> = ({ currentState, onNavigate }) => {
   const getLinkClass = (state: AppState) => {
-    const isActive = currentState === state || 
-      (state === AppState.IDLE && (currentState === AppState.ANALYZING || currentState === AppState.COMPLETED || currentState === AppState.REFining));
+    let isActive = false;
+    
+    if (state === AppState.IDLE) {
+      // Dashboard is "active" if we are in IDLE, ANALYZING, COMPLETED, or REFINING
+      isActive = [AppState.IDLE, AppState.ANALYZING, AppState.COMPLETED, AppState.REFining].includes(currentState);
+    } else {
+      isActive = currentState === state;
+    }
     
     return isActive 
       ? "text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1" 
-      : "text-gray-500 hover:text-gray-900 transition-colors pb-1";
+      : "text-gray-500 hover:text-gray-900 transition-colors pb-1 cursor-pointer";
   };
 
   return (
