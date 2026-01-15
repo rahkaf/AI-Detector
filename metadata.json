@@ -1,0 +1,5 @@
+{
+  "name": "VeriScript - Academic Integrity Platform",
+  "description": "An advanced web-based platform for detecting plagiarism and AI-generated content in student submissions using Gemini Pro and Google Search grounding.",
+  "requestFramePermissions": []
+}
