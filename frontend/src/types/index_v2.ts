@@ -14,9 +14,9 @@ export interface TextMetrics {
     type_token_ratio: number;
   };
   repetitive_patterns: {
-    2gram_repetition: number;
-    3gram_repetition: number;
-    4gram_repetition: number;
+    '2gram_repetition': number;
+    '3gram_repetition': number;
+    '4gram_repetition': number;
     repeated_sentence_starts: number;
     overused_words: number;
     repetition_score: number;

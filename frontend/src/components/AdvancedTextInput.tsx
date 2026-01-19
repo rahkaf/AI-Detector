@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Strategy, ProcessMode, PROCESS_MODES, STRATEGY_DESCRIPTIONS } from '../types_v2';
+import { Strategy, ProcessMode, PROCESS_MODES, STRATEGY_DESCRIPTIONS } from '../types/index_v2';
 
 interface Props {
   onHumanize: (text: string, strategy: Strategy, mode: 'standard' | 'ultra') => void;
