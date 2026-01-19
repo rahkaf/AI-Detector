@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
-import TextInput from './components/TextInput';
+import AdvancedTextInput from './components/AdvancedTextInput';
 import ResultsDashboard from './components/ResultsDashboard';
-import { AppState, HumanizeResult, Strategy, HistoryItem } from './types';
-import { humanizeText } from './services/api';
+import { AppState, HumanizeResult, Strategy, HistoryItem } from './types/index_v2';
+import { humanizeText } from './services/api_v2';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(AppState.IDLE);
@@ -29,13 +29,13 @@ const App: React.FC = () => {
     localStorage.setItem('humanizeai_history', JSON.stringify(history));
   }, [history]);
   
-  const handleHumanize = async (text: string, strategy: Strategy, aggressiveMode: boolean = false) => {
+  const handleHumanize = async (text: string, strategy: Strategy, mode: 'standard' | 'ultra') => {
     setOriginalText(text);
     setState(AppState.PROCESSING);
     setError(null);
     
     try {
-      const humanized = await humanizeText(text, strategy, 3, false, aggressiveMode);
+      const humanized = await humanizeText(text, strategy, 3, false, true, mode);
       setResult(humanized);
       
       // Add to history
@@ -46,6 +46,7 @@ const App: React.FC = () => {
         humanized: humanized.text,
         metrics: humanized.metrics,
         strategy: strategy,
+        mode: mode,
       };
       setHistory(prev => [newHistoryItem, ...prev].slice(0, 50)); // Keep last 50
       
@@ -64,15 +65,20 @@ const App: React.FC = () => {
   };
   
   const loadingMessages = [
-    'Initializing ensemble models...',
-    'Analyzing text patterns...',
-    'Generating variations with BART...',
+    'Initializing advanced ensemble models...',
+    'Analyzing text characteristics and patterns...',
+    'Generating variations with BART paraphrasing...',
     'Processing with T5 transformer...',
-    'Applying PEGASUS paraphrasing...',
-    'Calculating perplexity scores...',
-    'Measuring burstiness metrics...',
-    'Optimizing for human-like patterns...',
-    'Removing AI clichés...',
+    'Applying PEGASUS abstractive generation...',
+    'Calculating GPT-2 perplexity scores...',
+    'Measuring advanced burstiness metrics...',
+    'Analyzing n-gram entropy distributions...',
+    'Removing 50+ AI cliché patterns...',
+    'Applying syntactic restructuring...',
+    'Enhancing burstiness dramatically...',
+    'Injecting linguistic noise...',
+    'Optimizing for maximum human-like patterns...',
+    'Running iterative refinement passes...',
     'Finalizing humanized output...',
   ];
   
@@ -84,7 +90,7 @@ const App: React.FC = () => {
       const interval = setInterval(() => {
         index = (index + 1) % loadingMessages.length;
         setLoadingMessage(loadingMessages[index]);
-      }, 2000);
+      }, 2500); // Slower cycle for longer processing
       
       return () => clearInterval(interval);
     }
@@ -96,7 +102,7 @@ const App: React.FC = () => {
       
       <main className="flex-grow container mx-auto px-4 py-8 md:py-16">
         {state === AppState.IDLE && (
-          <TextInput onHumanize={handleHumanize} isProcessing={false} />
+          <AdvancedTextInput onHumanize={handleHumanize} isProcessing={false} />
         )}
         
         {state === AppState.PROCESSING && (
@@ -109,19 +115,19 @@ const App: React.FC = () => {
             </div>
             <div className="space-y-4">
               <h2 className="text-4xl font-black text-gray-900 tracking-tight">
-                Humanizing Your Text
+                Advanced Humanization
               </h2>
               <p className="text-gray-500 max-w-md mx-auto font-medium">
                 {loadingMessage}
               </p>
-            </div>
-            <div className="flex gap-3">
-              {['BART', 'T5', 'PEGASUS'].map((model, i) => (
-                <div key={i} className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span className="text-xs font-bold text-gray-700">{model}</span>
-                </div>
-              ))}
+              <div className="flex gap-2 flex-wrap justify-center">
+                {['Advanced Ensemble', 'GPT-2 Perplexity', 'Cascade Blending', 'Syntactic Restructuring', 'Burstiness Enhancement', 'Iterative Refinement'].map((feature, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span className="text-xs font-bold text-gray-700">{feature}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -169,12 +175,29 @@ const App: React.FC = () => {
                         </span>
                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.original.substring(0, 100)}...</p>
                       </div>
-                      <span className="text-lg font-black text-emerald-600">{Math.round(item.metrics.composite_score)}%</span>
+                      <div className="text-right">
+                        <span className="text-lg font-black text-emerald-600">{Math.round(item.metrics.composite_score)}%</span>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {item.mode === 'ultra' ? '🔥 Ultra' : '⚡ Standard'}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {item.strategy.replace('_', ' ')}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        )}
+        
+        {state === AppState.ANALYSIS && (
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-4xl font-black text-gray-900 mb-8">Text Analysis</h2>
+            <div className="bg-white p-8 rounded-3xl border border-gray-100">
+              <p className="text-gray-600">Text analysis feature coming soon...</p>
+            </div>
           </div>
         )}
         
@@ -192,7 +215,10 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm text-gray-500">
             <i className="fas fa-shield-halved text-indigo-600 mr-2"></i>
-            HumanizeAI - Advanced AI Text Humanization Platform
+            Advanced AI Humanization Platform v2.0
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            Bypasses Originality.ai, GPTZero, Quillbot, Scribbr
           </p>
           <p className="text-xs text-gray-400 mt-2">
             Powered by Xargham | BeeNeural Pvt Ltd
